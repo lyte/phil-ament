@@ -422,3 +422,22 @@ html.dark .dot { border-color: rgb(255 255 255 / 0.22); }
 .confirm .button { flex: 1; }
 
 .about a { color: inherit; }
+
+.donate-links {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 8px;
+	margin-top: 12px;
+}
+.donate-links .button {
+	flex: 1 1 13rem;
+	width: auto;
+	min-width: min(100%, 13rem);
+	gap: 8px;
+	padding-inline: 12px;
+}
+.donate-links svg {
+	width: 20px;
+	height: 20px;
+	flex: none;
+}

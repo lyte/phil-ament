@@ -169,4 +169,87 @@
 
 	{#if error}<p class="error">{error}</p>{/if}
 	{#if message}<p class="hint">{message}</p>{/if}
+
+	<section class="panel donate">
+		<h2>Donate</h2>
+		<p>
+			If you like this project and want to donate click a link below. Regardless this is provided FREE to all and donating below will not unlock any hidden features but will gain my overwhelming appreciation and help support the continued maintenance and future development.
+		</p>
+		<div class="donate-links">
+			<a
+				class="button"
+				href="https://www.paypal.com/paypalme/vladhernandez/5"
+				target="_blank"
+				rel="noopener noreferrer"
+			>
+				<svg viewBox="0 0 24 24" aria-hidden="true">
+					<path
+						d="M4.5 9h11.2v5.2a3.6 3.6 0 0 1-3.6 3.6H8.1a3.6 3.6 0 0 1-3.6-3.6V9z"
+						fill="none"
+						stroke="currentColor"
+						stroke-width="1.7"
+						stroke-linejoin="round"
+					/>
+					<path
+						d="M15.7 10.2h1.2a2.2 2.2 0 0 1 0 4.4h-1.2"
+						fill="none"
+						stroke="currentColor"
+						stroke-width="1.7"
+						stroke-linecap="round"
+						stroke-linejoin="round"
+					/>
+					<path
+						d="M7.2 5.2v1.6M10.2 4.2v2.2M13.2 5.2v1.6"
+						fill="none"
+						stroke="currentColor"
+						stroke-width="1.7"
+						stroke-linecap="round"
+					/>
+				</svg>
+				Buy me a Coffee
+			</a>
+			<a
+				class="button"
+				href="https://www.paypal.com/paypalme/vladhernandez/20"
+				target="_blank"
+				rel="noopener noreferrer"
+			>
+				<svg viewBox="0 0 24 24" aria-hidden="true">
+					<path
+						d="M4 10.2c0-3 3.6-5.2 8-5.2s8 2.2 8 5.2H4z"
+						fill="none"
+						stroke="currentColor"
+						stroke-width="1.7"
+						stroke-linejoin="round"
+					/>
+					<circle cx="8" cy="7.2" r="0.65" fill="currentColor" />
+					<circle cx="12" cy="6.3" r="0.65" fill="currentColor" />
+					<circle cx="16" cy="7.2" r="0.65" fill="currentColor" />
+					<path
+						d="M3.6 12.6q1.4-1.2 2.8 0t2.8 0t2.8 0t2.8 0t2.8 0"
+						fill="none"
+						stroke="currentColor"
+						stroke-width="1.7"
+						stroke-linecap="round"
+						stroke-linejoin="round"
+					/>
+					<path
+						d="M4.2 15.5h15.6"
+						fill="none"
+						stroke="currentColor"
+						stroke-width="2.2"
+						stroke-linecap="round"
+					/>
+					<path
+						d="M5 17.2h14c0 2-2.8 3.5-7 3.5s-7-1.5-7-3.5z"
+						fill="none"
+						stroke="currentColor"
+						stroke-width="1.7"
+						stroke-linejoin="round"
+					/>
+				</svg>
+				Buy me Lunch
+			</a>
+		</div>
+	</section>
 </main>
