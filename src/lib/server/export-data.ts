@@ -16,6 +16,7 @@ function rows() {
 		hex: item.hex,
 		roll_weight_g: item.rollWeightG,
 		roll_count: item.rollCount,
+		low_stock_tracking: item.lowStockTracking,
 		notes: item.notes,
 		hotend: hotEndLabel(item) ?? '',
 		updated_at: new Date(item.updatedAt).toISOString()
@@ -39,6 +40,7 @@ export function exportInventory(format: string) {
 			'hex',
 			'roll_weight_g',
 			'roll_count',
+			'low_stock_tracking',
 			'notes',
 			'hotend',
 			'updated_at'

@@ -7,6 +7,7 @@
 	let { data } = $props();
 	let rollCount = $state(data.item.rollCount);
 	let notes = $state(data.item.notes);
+	let lowStockTracking = $state(data.item.lowStockTracking);
 	let confirming = $state(false);
 	let saving = $state(false);
 	let error = $state('');
@@ -14,6 +15,7 @@
 	$effect(() => {
 		rollCount = data.item.rollCount;
 		notes = data.item.notes;
+		lowStockTracking = data.item.lowStockTracking;
 	});
 
 	const hotEnd = $derived(hotEndLabel(data.item));
@@ -24,7 +26,7 @@
 		const response = await fetch(`/api/inventory/${data.item.id}`, {
 			method: 'PATCH',
 			headers: { 'content-type': 'application/json' },
-			body: JSON.stringify({ rollCount, notes })
+			body: JSON.stringify({ rollCount, notes, lowStockTracking })
 		});
 		saving = false;
 		if (!response.ok) {
@@ -48,7 +50,8 @@
 			materialId: data.item.materialId,
 			colorId: data.item.colorId,
 			rollCount: data.item.rollCount,
-			notes: data.item.notes
+			notes: data.item.notes,
+			lowStockTracking: data.item.lowStockTracking
 		});
 		await goto('/');
 	}
@@ -78,6 +81,23 @@
 		<div class="field">
 			<span class="field-label">Rolls on hand</span>
 			<Stepper size="lg" value={rollCount} onchange={(next) => (rollCount = next)} />
+		</div>
+		<div class="switch-row">
+			<div>
+				<span class="field-label">Low inventory tracking</span>
+				<p class="hint">Show Low on the list when this filament is down to 1 roll.</p>
+			</div>
+			<button
+				type="button"
+				class="switch"
+				role="switch"
+				data-testid="low-tracking"
+				aria-checked={lowStockTracking}
+				aria-label="Low inventory tracking"
+				onclick={() => (lowStockTracking = !lowStockTracking)}
+			>
+				<span></span>
+			</button>
 		</div>
 		<label class="field">
 			<span class="field-label">Notes</span>

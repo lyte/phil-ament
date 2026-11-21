@@ -6,6 +6,7 @@ export type UndoPayload = {
 	colorId: number;
 	rollCount: number;
 	notes: string;
+	lowStockTracking: boolean;
 };
 
 export const undoStore = writable<UndoPayload | null>(null);

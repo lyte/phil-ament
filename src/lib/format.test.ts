@@ -17,9 +17,12 @@ describe('format', () => {
 		expect(hotEndLabel({ extruderTemp: null, extruderTempMin: null, extruderTempMax: null })).toBeNull();
 	});
 
-	it('treats one roll as low and 1000 g as 1 kg', () => {
-		expect(isLow(1)).toBe(true);
-		expect(isLow(2)).toBe(false);
+	it('flags Low only when tracking is on and the count is 1 or fewer', () => {
+		expect(isLow({ rollCount: 1, lowStockTracking: false })).toBe(false);
+		expect(isLow({ rollCount: 0, lowStockTracking: false })).toBe(false);
+		expect(isLow({ rollCount: 1, lowStockTracking: true })).toBe(true);
+		expect(isLow({ rollCount: 0, lowStockTracking: true })).toBe(true);
+		expect(isLow({ rollCount: 2, lowStockTracking: true })).toBe(false);
 		expect(weightLabel(1000)).toBe('1 kg');
 	});
 

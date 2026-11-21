@@ -16,6 +16,12 @@ export function asInteger(value: unknown, label: string) {
 	return value;
 }
 
+export function asOptionalBoolean(value: unknown, label: string) {
+	if (value == null) return undefined;
+	if (typeof value !== 'boolean') throw new HttpError(400, `${label} must be true or false`);
+	return value;
+}
+
 export function asOptionalString(value: unknown, label: string, max = 2000) {
 	if (value == null) return undefined;
 	if (typeof value !== 'string') throw new HttpError(400, `${label} must be text`);

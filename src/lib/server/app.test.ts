@@ -1,4 +1,5 @@
-import { mkdtempSync } from 'node:fs';
+import Database from 'better-sqlite3';
+import { mkdtempSync, readFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { afterEach, beforeAll, expect, it } from 'vitest';
@@ -75,6 +76,38 @@ it('stores whole 1 kg rolls and adds to the count instead of duplicating', () =>
 	expect(second.item.id).toBe(first.item.id);
 	expect(second.item.rollCount).toBe(5);
 	expect(second.item.notes).toBe('shelf A');
+	expect(first.item.lowStockTracking).toBe(false);
+});
+
+it('tracks low inventory per item and leaves it off unless asked', () => {
+	const { brand, pla, color, other } = bambuPla();
+	const plain = addInventory({
+		brandId: brand.id,
+		materialId: pla.id,
+		colorId: color.id,
+		rollCount: 1
+	});
+	expect(plain.item.lowStockTracking).toBe(false);
+	const tracked = addInventory({
+		brandId: brand.id,
+		materialId: pla.id,
+		colorId: other.id,
+		rollCount: 1,
+		lowStockTracking: true
+	});
+	expect(tracked.item.lowStockTracking).toBe(true);
+	const stillTracked = addInventory({
+		brandId: brand.id,
+		materialId: pla.id,
+		colorId: other.id,
+		rollCount: 1,
+		lowStockTracking: false
+	});
+	expect(stillTracked.merged).toBe(true);
+	expect(stillTracked.item.lowStockTracking).toBe(true);
+	const turnedOff = updateInventory(tracked.item.id, { lowStockTracking: false });
+	expect(turnedOff.lowStockTracking).toBe(false);
+	expect(() => updateInventory(tracked.item.id, { lowStockTracking: 'yes' })).toThrow(HttpError);
 });
 
 it('does not merge a different material, and rejects a mismatched color', () => {
@@ -144,8 +177,10 @@ it('exports csv and json', () => {
 	expect(csv.body).toContain('brand,material,color');
 	expect(csv.body).toContain('Bambu Lab');
 	expect(csv.body).toContain('"a, b"');
-	const json = JSON.parse(exportInventory('json').body) as { roll_count: number }[];
+	expect(csv.body).toContain('low_stock_tracking');
+	const json = JSON.parse(exportInventory('json').body) as { roll_count: number; low_stock_tracking: boolean }[];
 	expect(json[0].roll_count).toBe(2);
+	expect(json[0].low_stock_tracking).toBe(false);
 	expect(() => exportInventory('xml')).toThrow(HttpError);
 });
 
@@ -160,6 +195,26 @@ it('keeps login off until a password is set, and stores only a hash', () => {
 	expect(passwordMatches('password1', stored)).toBe(true);
 	expect(() => login('nope')).toThrow(HttpError);
 	expect(login('password1')).toEqual(expect.any(String));
+});
+
+it('defaults rows that already existed to tracking off', () => {
+	const file = path.join(dir, 'before-tracking.db');
+	const sqlite = new Database(file);
+	sqlite.pragma('foreign_keys = ON');
+	for (const statement of readFileSync('drizzle/0000_init.sql', 'utf8').split('--> statement-breakpoint')) {
+		const sql = statement.trim();
+		if (sql) sqlite.exec(sql);
+	}
+	sqlite.prepare('insert into brands (name, is_custom) values (?, 0)').run('Test');
+	sqlite.prepare('insert into materials (name, family, is_custom) values (?, ?, 0)').run('PLA', 'pla');
+	sqlite.prepare('insert into colors (name, hex, brand_id, material_id, is_custom) values (?, ?, 1, 1, 0)').run('Black', '#000000');
+	sqlite.prepare(
+		'insert into inventory_items (brand_id, material_id, color_id, roll_count, created_at, updated_at) values (1, 1, 1, 1, 0, 0)'
+	).run();
+	sqlite.exec(readFileSync('drizzle/0001_low_stock_tracking.sql', 'utf8'));
+	const row = sqlite.prepare('select low_stock_tracking as tracking from inventory_items').get() as { tracking: number };
+	expect(row.tracking).toBe(0);
+	sqlite.close();
 });
 
 it('resets login when PHILAMENT_RESET_AUTH=1', () => {

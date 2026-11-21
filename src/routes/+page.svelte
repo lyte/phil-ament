@@ -102,7 +102,7 @@
 							<span class="row-title">{item.colorName}</span>
 							<span class="row-meta">
 								{item.brandName} · {item.materialName}
-								{#if isLow(item.rollCount)}<span class="low">Low</span>{/if}
+								{#if isLow(item)}<span class="low">Low</span>{/if}
 							</span>
 						</span>
 					</a>

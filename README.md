@@ -27,7 +27,7 @@ docker compose pull && docker compose up -d
 
 ## What it does
 
-- Inventory list with search, material chips, a Low flag at 1 roll, and plus/minus steppers.
+- Inventory list with search, material chips, plus/minus steppers, and an optional per-item Low flag (off unless you turn on tracking, then shown at 1 roll or fewer).
 - Add a filament by brand, type, and color. Adding the same combination increases its count.
 - Edit a roll: count, notes, and the recommended hot-end temperature when the catalog has one.
 - Settings for appearance (system, light, or dark), basic or full materials, optional login, and CSV or JSON export.

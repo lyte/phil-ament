@@ -24,8 +24,8 @@ export function hotEndLabel(
 	return null;
 }
 
-export function isLow(rollCount: number) {
-	return rollCount === 1;
+export function isLow(item: { rollCount: number; lowStockTracking: boolean }) {
+	return item.lowStockTracking && item.rollCount <= 1;
 }
 
 /** One hex or a comma-separated list becomes a CSS background. */

@@ -35,6 +35,7 @@ export const inventoryItems = sqliteTable(
 		colorId: integer('color_id').notNull(),
 		rollWeightG: integer('roll_weight_g').notNull().default(1000),
 		rollCount: integer('roll_count').notNull(),
+		lowStockTracking: integer('low_stock_tracking', { mode: 'boolean' }).notNull().default(false),
 		notes: text('notes').notNull().default(''),
 		createdAt: integer('created_at').notNull(),
 		updatedAt: integer('updated_at').notNull()

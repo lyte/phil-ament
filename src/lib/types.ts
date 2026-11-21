@@ -40,6 +40,7 @@ export type InventoryItem = {
 	hex: string;
 	rollWeightG: number;
 	rollCount: number;
+	lowStockTracking: boolean;
 	notes: string;
 	extruderTemp: number | null;
 	extruderTempMin: number | null;

@@ -3,7 +3,7 @@ import { ROLL_WEIGHT_G } from '$lib/format';
 import type { InventoryItem, MaterialFamily } from '$lib/types';
 import { getDb, getSqlite } from './db';
 import { colors, inventoryItems } from './schema';
-import { asInteger, asOptionalString, HttpError } from './http';
+import { asInteger, asOptionalBoolean, asOptionalString, HttpError } from './http';
 
 type Row = {
 	id: number;
@@ -17,6 +17,7 @@ type Row = {
 	hex: string;
 	rollWeightG: number;
 	rollCount: number;
+	lowStockTracking: number | boolean;
 	notes: string;
 	extruderTemp: number | null;
 	extruderTempMin: number | null;
@@ -38,6 +39,7 @@ const SELECT = `
 		c.hex as hex,
 		i.roll_weight_g as rollWeightG,
 		i.roll_count as rollCount,
+		i.low_stock_tracking as lowStockTracking,
 		i.notes as notes,
 		c.extruder_temp as extruderTemp,
 		c.extruder_temp_min as extruderTempMin,
@@ -49,6 +51,13 @@ const SELECT = `
 	join materials m on m.id = i.material_id
 	join colors c on c.id = i.color_id
 `;
+
+function asItem(row: Row): InventoryItem {
+	return {
+		...row,
+		lowStockTracking: row.lowStockTracking === true || row.lowStockTracking === 1
+	};
+}
 
 function escapeLike(value: string) {
 	return value.toLowerCase().replace(/[\\%_]/g, (char) => `\\${char}`);
@@ -72,12 +81,13 @@ export function listInventory(options: { q?: string; material?: string } = {}) {
 		params.push(material.toLowerCase(), material.toLowerCase());
 	}
 	const sql = `${SELECT}${where.length ? ` where ${where.join(' and ')}` : ''}`;
-	return sqlite.prepare(sql).all(...params) as InventoryItem[];
+	return (sqlite.prepare(sql).all(...params) as Row[]).map(asItem);
 }
 
 export function getInventoryItem(id: number) {
 	const sqlite = getSqlite();
-	return (sqlite.prepare(`${SELECT} where i.id = ?`).get(id) as Row | undefined) ?? null;
+	const row = sqlite.prepare(`${SELECT} where i.id = ?`).get(id) as Row | undefined;
+	return row ? asItem(row) : null;
 }
 
 function assertColorMatch(brandId: number, materialId: number, colorId: number) {
@@ -101,6 +111,7 @@ export function addInventory(input: Record<string, unknown>) {
 	const colorId = asInteger(input.colorId, 'Color');
 	const rollCount = asInteger(input.rollCount, 'Count');
 	const notes = asOptionalString(input.notes, 'Notes') ?? '';
+	const lowStockTracking = asOptionalBoolean(input.lowStockTracking, 'Low inventory tracking') ?? false;
 	if (rollCount < 1 || rollCount > 999) {
 		throw new HttpError(400, 'Count must be between 1 and 999');
 	}
@@ -126,7 +137,12 @@ export function addInventory(input: Record<string, unknown>) {
 			merged = true;
 			const next = Math.min(999, existing.rollCount + rollCount);
 			tx.update(inventoryItems)
-				.set({ rollCount: next, updatedAt: now })
+				.set({
+					rollCount: next,
+					updatedAt: now,
+					// Adding rolls with tracking off should not clear a flag already set on the item.
+					...(lowStockTracking ? { lowStockTracking: true } : {})
+				})
 				.where(eq(inventoryItems.id, existing.id))
 				.run();
 			return existing.id;
@@ -139,6 +155,7 @@ export function addInventory(input: Record<string, unknown>) {
 				colorId,
 				rollWeightG: ROLL_WEIGHT_G,
 				rollCount,
+				lowStockTracking,
 				notes,
 				createdAt: now,
 				updatedAt: now
@@ -157,7 +174,9 @@ export function addInventory(input: Record<string, unknown>) {
 export function updateInventory(id: number, input: Record<string, unknown>) {
 	const current = getInventoryItem(id);
 	if (!current) throw new HttpError(404, 'That filament is not in your inventory');
-	const patch: { rollCount?: number; notes?: string; updatedAt: number } = { updatedAt: Date.now() };
+	const patch: { rollCount?: number; notes?: string; lowStockTracking?: boolean; updatedAt: number } = {
+		updatedAt: Date.now()
+	};
 	if (input.rollCount !== undefined) {
 		const rollCount = asInteger(input.rollCount, 'Count');
 		if (rollCount < 0 || rollCount > 999) throw new HttpError(400, 'Count must be between 0 and 999');
@@ -166,7 +185,12 @@ export function updateInventory(id: number, input: Record<string, unknown>) {
 	if (input.notes !== undefined) {
 		patch.notes = asOptionalString(input.notes, 'Notes') ?? '';
 	}
-	if (patch.rollCount === undefined && patch.notes === undefined) {
+	if (input.lowStockTracking !== undefined) {
+		const tracking = asOptionalBoolean(input.lowStockTracking, 'Low inventory tracking');
+		if (tracking === undefined) throw new HttpError(400, 'Low inventory tracking must be true or false');
+		patch.lowStockTracking = tracking;
+	}
+	if (patch.rollCount === undefined && patch.notes === undefined && patch.lowStockTracking === undefined) {
 		throw new HttpError(400, 'Nothing to update');
 	}
 	const { db } = getDb();
