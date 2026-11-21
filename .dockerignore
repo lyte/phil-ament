@@ -1,0 +1,12 @@
+node_modules
+.svelte-kit
+build
+data
+.git
+.github
+test-results
+playwright-report
+**/*.test.ts
+*.md
+!README.md
+!src/lib/server/catalog/NOTICE

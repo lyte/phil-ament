@@ -1,0 +1,11 @@
+services:
+  phil-ament:
+    image: ghcr.io/lyte/phil-ament:latest
+    container_name: phil-ament
+    ports:
+      - "8080:3000"
+    volumes:
+      - ./data:/data
+    environment:
+      - TZ=America/Edmonton
+    restart: unless-stopped
