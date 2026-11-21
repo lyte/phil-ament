@@ -1,0 +1,36 @@
+<!doctype html>
+<html lang="en">
+	<head>
+		<meta charset="utf-8" />
+		<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+		<meta name="description" content="Phil-ament, a self-hosted filament inventory." />
+		<meta name="theme-color" content="#f4f1eb" />
+		<meta name="robots" content="noindex" />
+		<meta name="mobile-web-app-capable" content="yes" />
+		<meta name="apple-mobile-web-app-capable" content="yes" />
+		<meta name="apple-mobile-web-app-title" content="Phil-ament" />
+		<link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+		<link rel="icon" href="/icons/icon-192.png" type="image/png" sizes="192x192" />
+		<link rel="apple-touch-icon" href="/icons/apple-touch-icon.png" />
+		<link rel="manifest" href="/manifest.webmanifest" />
+		<script>
+			(function () {
+				try {
+					var theme = localStorage.getItem('philament-theme') || 'system';
+					var dark =
+						theme === 'dark' ||
+						(theme !== 'light' && matchMedia('(prefers-color-scheme: dark)').matches);
+					document.documentElement.classList.toggle('dark', dark);
+					document.documentElement.dataset.theme = theme;
+					document.documentElement.style.colorScheme = dark ? 'dark' : 'light';
+					var meta = document.querySelector('meta[name="theme-color"]');
+					if (meta) meta.setAttribute('content', dark ? '#141311' : '#f4f1eb');
+				} catch (e) {}
+			})();
+		</script>
+		%sveltekit.head%
+	</head>
+	<body data-sveltekit-preload-data="hover">
+		<div style="display: contents">%sveltekit.body%</div>
+	</body>
+</html>
