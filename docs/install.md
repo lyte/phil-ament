@@ -1,6 +1,6 @@
 # Install Phil-ament
 
-Phil-ament is one container. It listens on port 3000 inside the container. The compose file below publishes that as port 8080 on your computer, NAS, or Pi. The database is a file in the `data` folder, which is mounted into the container at `/data`.
+Phil-ament is one container. It listens on port 3000 inside the container. The compose file below publishes that as port 7720 on your computer, NAS, or Pi. The database is a file in the `data` folder, which is mounted into the container at `/data`.
 
 ```yaml
 services:
@@ -8,7 +8,7 @@ services:
     image: ghcr.io/lyte/phil-ament:latest
     container_name: phil-ament
     ports:
-      - "8080:3000"
+      - "7720:3000"
     volumes:
       - ./data:/data
     environment:
@@ -16,7 +16,7 @@ services:
     restart: unless-stopped
 ```
 
-Change `TZ` to your own timezone if you want. Change `8080` if that port is already taken. Leave `3000` as it is. That is the port inside the container.
+Change `TZ` to your own timezone if you want. If 7720 is already in use, change the left-hand number in `ports:` to any free port. Leave `3000` as it is. That is the port inside the container.
 
 The image is built for 64-bit Intel/AMD (`linux/amd64`) and 64-bit ARM (`linux/arm64`), which covers a typical PC, a Synology, and a Raspberry Pi 4 or 5 running a 64-bit OS.
 
@@ -34,9 +34,9 @@ These steps match Container Manager on DSM 7.2.
 8. Path: select the `phil-ament` folder that contains `docker-compose.yml`.
 9. Source: use the existing compose file. The page should show the same services, ports, and volume as the file. Leave them as they are.
 10. Click through **Next** and start the project. Container Manager pulls `ghcr.io/lyte/phil-ament:latest` and starts it. The first start can take a minute while it downloads the image and builds the filament catalog.
-11. When the project status is **Running**, open a browser on your phone or computer to `http://<nas-ip>:8080`. The NAS IP is shown in DSM under **Control Panel** → **Info Center**, or in the address bar you already use for DSM.
+11. When the project status is **Running**, open a browser on your phone or computer to `http://<nas-ip>:7720`. The NAS IP is shown in DSM under **Control Panel** → **Info Center**, or in the address bar you already use for DSM.
 
-If the page does not load, check that port 8080 is free and that the DSM firewall allows it. You can change the left-hand port in the compose file (for example `"8081:3000"`) and create the project again.
+If the page does not load, check that port 7720 is free and that the DSM firewall allows it. You can change the left-hand port in the compose file (for example `"8081:3000"`) and create the project again.
 
 ### Update on a Synology
 
@@ -79,7 +79,7 @@ Use **Raspberry Pi OS (64-bit)**. The 32-bit OS will not run this image.
    docker compose up -d
    ```
 
-5. Open `http://<pi-ip>:8080`. On many home networks that is `http://raspberrypi.local:8080`. Find the IP with `hostname -I` if the name does not resolve.
+5. Open `http://<pi-ip>:7720`. On many home networks that is `http://raspberrypi.local:7720`. Find the IP with `hostname -I` if the name does not resolve.
 
 ### Update on a Pi
 
@@ -99,7 +99,7 @@ cd phil-ament
 docker compose up -d
 ```
 
-Open `http://localhost:8080` on that machine, or `http://<that-machine-ip>:8080` from your phone.
+Open `http://localhost:7720` on that machine, or `http://<that-machine-ip>:7720` from your phone.
 
 Update with:
 
