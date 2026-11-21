@@ -80,9 +80,16 @@ describe('inventory filters', () => {
 describe('credits', () => {
 	it('keeps the SpoolmanDB permission notice beside the catalog', () => {
 		const notice = readFileSync('src/lib/server/catalog/NOTICE', 'utf8');
+		const catalog = JSON.parse(readFileSync('src/lib/server/catalog/catalog-data.json', 'utf8')) as {
+			source: { commit: string; retrieved: string };
+			brands: string[];
+		};
 		expect(notice).toContain('Copyright (c) 2024 Donkie');
 		expect(notice).toContain('Permission is hereby granted');
 		expect(notice).toContain('THE SOFTWARE IS PROVIDED "AS IS"');
+		expect(notice).toContain(`Commit: ${catalog.source.commit}`);
+		expect(notice).toContain(`Retrieved: ${catalog.source.retrieved}`);
+		expect(catalog.brands).not.toContain('Generic');
 	});
 
 	it('names the author as futuristicvlad', () => {

@@ -25,6 +25,8 @@ jobs:
           cache: npm
       - name: Install build tools for better-sqlite3
         run: sudo apt-get update && sudo apt-get install -y python3 make g++
+      - name: Check the catalog update script
+        run: python3 scripts/update-catalog.py --self-test
       - run: npm ci
       - run: npm test
       - run: npm run build
