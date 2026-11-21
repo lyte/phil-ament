@@ -1,0 +1,55 @@
+# Refreshes the bundled SpoolmanDB snapshot. The app does not fetch this at runtime.
+#
+# A pull request opened with the default GITHUB_TOKEN does not start CI.
+# Close and reopen it to run CI, or set the CATALOG_SYNC_TOKEN secret.
+# A repository admin also has to allow Actions to create pull requests.
+# See docs/catalog.md.
+
+name: Update SpoolmanDB catalog
+
+on:
+  schedule:
+    # 06:17 UTC on the 1st. GitHub may start the run a little later.
+    - cron: "17 6 1 * *"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pull-requests: write
+
+concurrency:
+  group: catalog-sync
+  cancel-in-progress: false
+
+jobs:
+  sync:
+    name: Refresh catalog
+    runs-on: ubuntu-latest
+    env:
+      CATALOG_PR_BODY: /tmp/philament-catalog-pr-body.md
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Rebuild the bundled catalog from the latest SpoolmanDB
+        id: catalog
+        run: npm run catalog:update
+
+      # No-op when SpoolmanDB is already at the recorded commit.
+      - name: Open or update the pull request
+        if: steps.catalog.outputs.changed == 'true'
+        uses: peter-evans/create-pull-request@v8
+        with:
+          token: ${{ secrets.CATALOG_SYNC_TOKEN || github.token }}
+          add-paths: |
+            src/lib/server/catalog/catalog-data.json
+            src/lib/server/catalog/NOTICE
+          commit-message: "Update SpoolmanDB catalog (${{ steps.catalog.outputs.short_sha }})"
+          title: "Update SpoolmanDB catalog (${{ steps.catalog.outputs.short_sha }})"
+          body-path: ${{ env.CATALOG_PR_BODY }}
+          branch: catalog-sync
+          base: main
+          delete-branch: true

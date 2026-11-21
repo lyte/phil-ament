@@ -37,13 +37,15 @@ Login is off until you turn it on in Settings. The password is stored as a scryp
 
 ## Catalog
 
-Brand colors and extruder temperatures are seeded from [SpoolmanDB](https://github.com/Donkie/SpoolmanDB) by Donkie and contributors (commit `8e391c16be4bfde29dfc184e2f0b9a8d154ab550`, retrieved 2026-11-20). SpoolmanDB is MIT licensed. The copyright and permission notice is kept next to the bundled data in [`src/lib/server/catalog/NOTICE`](src/lib/server/catalog/NOTICE).
+Brand colors and extruder temperatures are seeded from [SpoolmanDB](https://github.com/Donkie/SpoolmanDB) by Donkie and contributors. SpoolmanDB is MIT licensed. The copyright, permission notice, snapshot commit, and retrieval date are kept next to the bundled data in [`src/lib/server/catalog/NOTICE`](src/lib/server/catalog/NOTICE).
 
 Phil-ament also adds a Generic brand with a short list of plain colors (white, black, grey, red, and so on). Those colors have no hot-end temperature.
 
 In brand pickers, Bambu Lab, Sunlu, eSun, Ziro, Overture, and Creality come first, then Generic, then every other brand alphabetically.
 
 Basic materials (the default) are PLA, PETG, TPU, ABS, and their variants, such as PLA+, PLA Silk, PLA Matte, PETG-CF, and TPU 95A. Full shows the rest of the catalog.
+
+A GitHub Action refreshes that snapshot on the 1st of each month and opens a pull request when SpoolmanDB has a new commit. The running app never downloads catalog data. To refresh the snapshot on your own machine, run `npm run catalog:update` (this needs git and a network connection). The one-time repository setting, and how to make CI run on that pull request, are in [Catalog updates](docs/catalog.md).
 
 ## Logos and icons
 

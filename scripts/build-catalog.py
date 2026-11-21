@@ -3,6 +3,14 @@
 
 Reads every filaments/*.json from SPOOLMAN_DIR (default /tmp/spoolmandb)
 and writes src/lib/server/catalog/catalog-data.json plus NOTICE.
+
+SPOOLMAN_COMMIT sets the recorded commit. When it is unset, the commit is
+`git rev-parse HEAD` in SPOOLMAN_DIR. SPOOLMAN_RETRIEVED sets the retrieval
+date (YYYY-MM-DD). When it is unset, the same commit keeps the date already
+in the snapshot, and a new commit uses today's date in UTC.
+
+Generic is not part of this file. The app adds that brand when it seeds a
+database. `npm run catalog:update` clones SpoolmanDB and then runs this script.
 """
 
 from __future__ import annotations
@@ -10,12 +18,15 @@ from __future__ import annotations
 import json
 import os
 import re
+import subprocess
+from datetime import datetime, timezone
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 OUT_DIR = ROOT / "src" / "lib" / "server" / "catalog"
-SOURCE_COMMIT = "8e391c16be4bfde29dfc184e2f0b9a8d154ab550"
-SOURCE_RETRIEVED = "2026-11-20"
+
+# Same prefixes as src/lib/brands.ts, in picker order. A refresh must keep them.
+PINNED_BRANDS = ("bambu lab", "sunlu", "esun", "ziro", "overture", "creality")
 
 # Product-line words hobbyists treat as a material variant. Longer keys first.
 FINISHES = [
@@ -106,7 +117,80 @@ def temps(filament: dict) -> tuple[int | None, int | None, int | None]:
     return temp, tmin, tmax
 
 
-def build(source: Path) -> dict:
+def existing_source() -> dict:
+    path = OUT_DIR / "catalog-data.json"
+    if not path.is_file():
+        return {}
+    try:
+        data = json.loads(path.read_text(encoding="utf-8"))
+    except json.JSONDecodeError:
+        return {}
+    source = data.get("source")
+    return source if isinstance(source, dict) else {}
+
+
+def resolve_commit(spoolman_dir: Path) -> str:
+    commit = os.environ.get("SPOOLMAN_COMMIT", "").strip()
+    if not commit:
+        try:
+            commit = subprocess.check_output(
+                ["git", "-C", str(spoolman_dir), "rev-parse", "HEAD"],
+                text=True,
+            ).strip()
+        except (subprocess.CalledProcessError, FileNotFoundError) as exc:
+            raise SystemExit(
+                "Could not determine the SpoolmanDB commit. "
+                "Set SPOOLMAN_COMMIT, or point SPOOLMAN_DIR at a git checkout."
+            ) from exc
+    if not re.fullmatch(r"[0-9a-f]{40}", commit):
+        raise SystemExit(f"SpoolmanDB commit must be 40 lowercase hex characters, got {commit!r}")
+    return commit
+
+
+def resolve_retrieved(commit: str) -> str:
+    retrieved = os.environ.get("SPOOLMAN_RETRIEVED", "").strip()
+    if not retrieved:
+        current = existing_source()
+        if current.get("commit") == commit and isinstance(current.get("retrieved"), str):
+            retrieved = current["retrieved"]
+        else:
+            retrieved = datetime.now(timezone.utc).date().isoformat()
+    if not re.fullmatch(r"\d{4}-\d{2}-\d{2}", retrieved):
+        raise SystemExit(f"SPOOLMAN_RETRIEVED must be YYYY-MM-DD, got {retrieved!r}")
+    return retrieved
+
+
+def assert_snapshot(catalog: dict) -> None:
+    brands = catalog["brands"]
+    if not isinstance(brands, list) or not brands:
+        raise SystemExit("Catalog snapshot has no brands")
+    lowered = [name.lower() for name in brands]
+    if any(name == "generic" for name in lowered):
+        raise SystemExit(
+            "Refusing to store Generic in the SpoolmanDB snapshot. "
+            "That brand is added when a database is seeded."
+        )
+    missing = [
+        token
+        for token in PINNED_BRANDS
+        if not any(name == token or name.startswith(f"{token} ") for name in lowered)
+    ]
+    if missing:
+        raise SystemExit("Pinned brands missing from the SpoolmanDB snapshot: " + ", ".join(missing))
+    brand_set = set(brands)
+    material_set = set(catalog["materials"])
+    for color in catalog["colors"]:
+        if color["b"] not in brand_set or color["m"] not in material_set:
+            raise SystemExit(f"Catalog row is missing its brand or material: {color['b']} / {color['m']}")
+
+
+def write_text(path: Path, text: str) -> None:
+    temporary = path.with_name(f"{path.name}.tmp")
+    temporary.write_text(text, encoding="utf-8", newline="\n")
+    temporary.replace(path)
+
+
+def build(source: Path, commit: str, retrieved: str) -> dict:
     brands: list[str] = []
     materials: set[str] = set()
     colors: list[dict] = []
@@ -156,8 +240,8 @@ def build(source: Path) -> dict:
         "source": {
             "name": "SpoolmanDB",
             "url": "https://github.com/Donkie/SpoolmanDB",
-            "commit": SOURCE_COMMIT,
-            "retrieved": SOURCE_RETRIEVED,
+            "commit": commit,
+            "retrieved": retrieved,
             "license": "MIT",
             "copyright": "Copyright (c) 2024 Donkie",
         },
@@ -167,10 +251,11 @@ def build(source: Path) -> dict:
     }
 
 
-NOTICE = f"""SpoolmanDB catalog data
+def notice_text(commit: str, retrieved: str) -> str:
+    return f"""SpoolmanDB catalog data
 https://github.com/Donkie/SpoolmanDB
-Commit: {SOURCE_COMMIT}
-Retrieved: {SOURCE_RETRIEVED}
+Commit: {commit}
+Retrieved: {retrieved}
 
 The file catalog-data.json in this directory is derived from SpoolmanDB
 (brands, materials, color names, hex values, and extruder temperatures).
@@ -207,13 +292,20 @@ SOFTWARE.
 
 
 def main() -> None:
-    source = Path(os.environ.get("SPOOLMAN_DIR", "/tmp/spoolmandb")) / "filaments"
+    spoolman_dir = Path(os.environ.get("SPOOLMAN_DIR", "/tmp/spoolmandb"))
+    source = spoolman_dir / "filaments"
     if not source.is_dir():
         raise SystemExit(f"Missing SpoolmanDB filaments directory: {source}")
-    catalog = build(source)
+    commit = resolve_commit(spoolman_dir)
+    retrieved = resolve_retrieved(commit)
+    catalog = build(source, commit, retrieved)
+    assert_snapshot(catalog)
     OUT_DIR.mkdir(parents=True, exist_ok=True)
-    (OUT_DIR / "catalog-data.json").write_text(json.dumps(catalog, ensure_ascii=False, separators=(",", ":")))
-    (OUT_DIR / "NOTICE").write_text(NOTICE)
+    write_text(
+        OUT_DIR / "catalog-data.json",
+        json.dumps(catalog, ensure_ascii=False, separators=(",", ":")),
+    )
+    write_text(OUT_DIR / "NOTICE", notice_text(commit, retrieved))
     print(
         f"brands={len(catalog['brands'])} materials={len(catalog['materials'])} colors={len(catalog['colors'])}"
     )
