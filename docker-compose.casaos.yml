@@ -1,0 +1,55 @@
+# Paste this file into CasaOS: App Store → Custom Install → Import.
+# Other Docker hosts should use docker-compose.yml. That file keeps the
+# database in ./data. This one uses the CasaOS data folder.
+#
+# Fields named x-casaos are CasaOS metadata. Docker Compose, Synology
+# Container Manager, and Portainer do not use them to start the container.
+name: phil-ament
+services:
+  phil-ament:
+    image: ghcr.io/lyte/phil-ament:latest
+    container_name: phil-ament
+    ports:
+      - target: 3000
+        published: "7720"
+        protocol: tcp
+    volumes:
+      - type: bind
+        source: /DATA/AppData/phil-ament
+        target: /data
+    environment:
+      - TZ=America/Edmonton
+    restart: unless-stopped
+    x-casaos:
+      envs:
+        - container: TZ
+          description:
+            en_US: Time zone, for example America/Edmonton.
+      ports:
+        - container: "3000"
+          description:
+            en_US: Web UI. Published on the host as port 7720.
+      volumes:
+        - container: /data
+          description:
+            en_US: Inventory database. Stored on the host at /DATA/AppData/phil-ament.
+x-casaos:
+  architectures:
+    - amd64
+    - arm64
+  main: phil-ament
+  author: futuristicvlad
+  developer: futuristicvlad
+  category: Utilities
+  title:
+    en_US: Phil-ament
+  tagline:
+    en_US: Phil-ament
+  description:
+    en_US: Self-hosted filament inventory for 3D printing
+  # This picture is in the repository at static/icons/icon-512.png.
+  # CasaOS can load it after the repository is public.
+  icon: https://raw.githubusercontent.com/lyte/phil-ament/main/static/icons/icon-512.png
+  port_map: "7720"
+  index: /
+  scheme: http

@@ -17,7 +17,7 @@ docker compose up -d
 
 Open `http://localhost:7720`. Your database is the `data` folder next to the compose file. It stays put when you update.
 
-Step-by-step instructions for a Synology NAS, a Raspberry Pi, and any other Docker host are in [docs/install.md](docs/install.md).
+Step-by-step instructions for a Synology NAS, CasaOS, a Raspberry Pi, and any other Docker host are in [docs/install.md](docs/install.md). CasaOS uses [`docker-compose.casaos.yml`](docker-compose.casaos.yml).
 
 Updating is:
 

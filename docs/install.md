@@ -20,6 +20,8 @@ Change `TZ` to your own timezone if you want. If 7720 is already in use, change 
 
 The image is built for 64-bit Intel/AMD (`linux/amd64`) and 64-bit ARM (`linux/arm64`), which covers a typical PC, a Synology, and a Raspberry Pi 4 or 5 running a 64-bit OS.
 
+CasaOS is different. Do not paste the file above into CasaOS. Use the [CasaOS](#casaos) section and `docker-compose.casaos.yml`.
+
 ## Synology Container Manager
 
 These steps match Container Manager on DSM 7.2.
@@ -50,6 +52,98 @@ sudo docker compose pull && sudo docker compose up -d
 `/volume1/docker/phil-ament` is the usual path. If your folder lives on a different volume, use that path instead. The `data` folder is not touched.
 
 In Container Manager you can also open the project and build it again after editing the compose file. Pulling from SSH is the reliable way to get a newer `latest` image.
+
+## CasaOS
+
+Phil-ament is not in the CasaOS app store. You add it with **Custom Install**. Use [`docker-compose.casaos.yml`](../docker-compose.casaos.yml), not the compose file at the top of this page. The CasaOS file already names the web page, the port, and the folder for the database, so the import form is filled in for you.
+
+That file is safe to ignore on any other Docker host. The extra `x-casaos` blocks are notes for CasaOS. Docker Compose does not use them when it starts the container. Synology Container Manager and Portainer do the same.
+
+1. Open CasaOS in a browser.
+2. Open **App Store**.
+3. Open **Custom Install**.
+4. Click **Import**.
+5. Paste the compose file below. It is the same as `docker-compose.casaos.yml` in the repository. Click **Submit**.
+6. CasaOS opens a form and asks you to check a few fields. They should already be filled in:
+   - Web UI port **7720**, path **/**
+   - Mount: host `/DATA/AppData/phil-ament`, container `/data`
+   - Port mapping: host **7720** to container **3000**
+7. Click through and install. The first start downloads the image. When the app is running, open `http://<casaos-ip>:7720`. The address of CasaOS is the same one you already use, with port 7720 instead of the CasaOS port.
+
+CasaOS always shows that form, even when the compose file filled it in. Read the values. If they match the list above, you do not need to type anything.
+
+If you pasted the other compose file, or a box is empty, type the values yourself:
+
+- Web UI port: `7720`. Path: `/`.
+- Mount location: host path `/DATA/AppData/phil-ament`, container path `/data`. This is the CasaOS place for app data. The inventory database is the file `phil-ament.db` inside that folder.
+- Port mapping: host port `7720`, container port `3000`. Leave `3000` as it is.
+- If there is a `TZ` line, set it to your time zone. `America/Edmonton` is only an example.
+
+The icon on the CasaOS home screen comes from GitHub (`static/icons/icon-512.png`). This repository is private, so CasaOS cannot download that picture yet and the icon may be blank. The app still runs. The icon works once the repository is public.
+
+If CasaOS cannot download the image, the package on GHCR may still be private. The note in [If the container will not start](#if-the-container-will-not-start) covers that. On the CasaOS machine, `docker login ghcr.io` with a token that can read packages lets the install pull `ghcr.io/lyte/phil-ament`.
+
+```yaml
+name: phil-ament
+services:
+  phil-ament:
+    image: ghcr.io/lyte/phil-ament:latest
+    container_name: phil-ament
+    ports:
+      - target: 3000
+        published: "7720"
+        protocol: tcp
+    volumes:
+      - type: bind
+        source: /DATA/AppData/phil-ament
+        target: /data
+    environment:
+      - TZ=America/Edmonton
+    restart: unless-stopped
+    x-casaos:
+      envs:
+        - container: TZ
+          description:
+            en_US: Time zone, for example America/Edmonton.
+      ports:
+        - container: "3000"
+          description:
+            en_US: Web UI. Published on the host as port 7720.
+      volumes:
+        - container: /data
+          description:
+            en_US: Inventory database. Stored on the host at /DATA/AppData/phil-ament.
+x-casaos:
+  architectures:
+    - amd64
+    - arm64
+  main: phil-ament
+  author: futuristicvlad
+  developer: futuristicvlad
+  category: Utilities
+  title:
+    en_US: Phil-ament
+  tagline:
+    en_US: Phil-ament
+  description:
+    en_US: Self-hosted filament inventory for 3D printing
+  icon: https://raw.githubusercontent.com/lyte/phil-ament/main/static/icons/icon-512.png
+  port_map: "7720"
+  index: /
+  scheme: http
+```
+
+### Update on CasaOS
+
+The database stays in `/DATA/AppData/phil-ament`. Do not delete that folder.
+
+CasaOS keeps its own copy of the compose file after import. From a terminal on the CasaOS machine:
+
+```bash
+docker pull ghcr.io/lyte/phil-ament:latest
+```
+
+Then restart Phil-ament from the CasaOS app screen. Pulling a new image does not replace `/DATA/AppData/phil-ament`.
 
 ## Raspberry Pi
 
@@ -109,7 +203,7 @@ docker compose pull && docker compose up -d
 
 ## Your data
 
-Everything you type is stored in `./data/phil-ament.db` on the host. Copy the `data` folder somewhere safe if you want a backup. Stop the container first so the file is not half-written:
+Everything you type is stored in `./data/phil-ament.db` on the host. On CasaOS that file is `/DATA/AppData/phil-ament/phil-ament.db`. Copy the data folder somewhere safe if you want a backup. Stop the container first so the file is not half-written:
 
 ```bash
 docker compose stop
