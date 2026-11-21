@@ -1,3 +1,5 @@
+# CasaOS import uses docker-compose.casaos.yml. This file is for
+# Docker Compose, Synology Container Manager, and Portainer.
 services:
   phil-ament:
     image: ghcr.io/lyte/phil-ament:latest
